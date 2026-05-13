@@ -1,4 +1,3 @@
-katalog produk
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -10,137 +9,120 @@ katalog produk
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         [x-cloak] { display: none !important; }
+        /* Memastikan tabel admin tidak merusak layout HP */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans" x-data="tokoApp()">
 
-    <!-- NAVIGATION -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-green-600 tracking-tight">TOKO<span class="text-orange-500">WIINMART</span></h1>
-            <div class="hidden md:flex space-x-6 font-medium">
-                <a @click="page = 'home'" href="#" class="hover:text-green-600">Home</a>
-                <a @click="page = 'produk'" href="#" class="hover:text-green-600">Produk</a>
-                <a @click="page = 'tentang'" href="#" class="hover:text-green-600">Tentang Kami</a>
+            <h1 @click="page = 'home'" class="text-xl md:text-2xl font-bold text-green-600 tracking-tight cursor-pointer">TOKO<span class="text-orange-500">WIINMART</span></h1>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex space-x-6 font-medium">
+                    <a @click="page = 'home'" href="#" class="hover:text-green-600">Home</a>
+                    <a @click="page = 'produk'" href="#" class="hover:text-green-600">Produk</a>
+                    <a @click="page = 'tentang'" href="#" class="hover:text-green-600">Tentang Kami</a>
+                </div>
+                <button @click="loginAdmin()" class="text-gray-500 hover:text-green-600 p-2">
+                    <i class="fa fa-user-shield text-lg"></i>
+                </button>
             </div>
-<button @click="loginAdmin()" class="text-gray-500 hover:text-green-600">
-    <i class="fa fa-user-shield"></i>
-</button>
+        </div>
+        <div class="md:hidden flex justify-around bg-white border-t py-2 text-xs font-bold uppercase text-gray-500">
+            <button @click="page = 'home'" :class="page === 'home' ? 'text-green-600' : ''">Home</button>
+            <button @click="page = 'produk'" :class="page === 'produk' ? 'text-green-600' : ''">Produk</button>
+            <button @click="page = 'tentang'" :class="page === 'tentang' ? 'text-green-600' : ''">Tentang</button>
         </div>
     </nav>
 
-    <!-- PAGE: HOME -->
     <template x-if="page === 'home'">
-        <div>
-            <!-- Hero & Search -->
-            <section class="bg-green-600 py-16 px-4 text-center text-white">
-                <h2 class="text-3xl md:text-5xl font-bold mb-4">Belanja Harian Jadi Mudah</h2>
-                <p class="mb-8 opacity-90">Cari produk kebutuhan Anda di bawah ini</p>
+        <div class="overflow-hidden">
+            <section class="bg-green-600 py-10 md:py-16 px-4 text-center text-white">
+                <h2 class="text-2xl md:text-5xl font-bold mb-4">Belanja Harian Jadi Mudah</h2>
+                <p class="mb-6 md:mb-8 opacity-90 text-sm md:text-base">Cari produk kebutuhan Anda di bawah ini</p>
                 <div class="max-w-xl mx-auto flex shadow-lg rounded-lg overflow-hidden">
-                    <input type="text" x-model="search" placeholder="Cari beras, mie, sabun..." class="w-full px-4 py-3 text-gray-900 focus:outline-none">
-                    <button @click="page = 'produk'" class="bg-orange-500 px-6 py-3 hover:bg-orange-600 transition"><i class="fa fa-search"></i></button>
+                    <input type="text" x-model="search" placeholder="Cari beras, mie, sabun..." class="w-full px-4 py-3 text-gray-900 text-sm focus:outline-none">
+                    <button @click="page = 'produk'" class="bg-orange-500 px-4 md:px-6 py-3 hover:bg-orange-600 transition"><i class="fa fa-search"></i></button>
                 </div>
             </section>
 
-            <!-- Kategori Highlight -->
-            <section class="container mx-auto py-12 px-4">
-                <h3 class="text-xl font-bold mb-6 border-l-4 border-green-600 pl-3">Kategori Pilihan</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <section class="container mx-auto py-8 md:py-12 px-4">
+                <h3 class="text-lg font-bold mb-6 border-l-4 border-green-600 pl-3 uppercase tracking-wide">Kategori Pilihan</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     <template x-for="cat in categories" :key="cat">
-                        <div @click="filterCategory(cat)" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer text-center border border-gray-100 transition">
-                            <i class="fa fa-box text-green-500 text-2xl mb-2"></i>
-                            <p class="font-semibold" x-text="cat"></p>
+                        <div @click="filterCategory(cat)" class="bg-white p-4 md:p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer text-center border border-gray-100 transition">
+                            <i class="fa fa-box text-green-500 text-xl md:text-2xl mb-2"></i>
+                            <p class="font-semibold text-sm md:text-base" x-text="cat"></p>
                         </div>
                     </template>
                 </div>
             </section>
 
-            <!-- SLIDER FOTO & VIDEO (16:9) -->
-<section class="container mx-auto py-8 px-4" x-data="{ 
+            <section class="container mx-auto py-4 px-4" x-data="{ 
                 activeSlide: 1, 
                 totalSlides: 2, 
                 init() { 
                     setInterval(() => { this.activeSlide = this.activeSlide === this.totalSlides ? 1 : this.activeSlide + 1 }, 5000) 
                 } 
             }">
-                <h3 class="text-lg font-bold mb-4 border-l-4 border-orange-500 pl-3">Promo Spesial</h3>
-                <div class="relative w-full aspect-video overflow-hidden rounded-2xl shadow-lg bg-gray-200">
-                    
+                <h3 class="text-lg font-bold mb-4 border-l-4 border-orange-500 pl-3 uppercase tracking-wide">Promo Spesial</h3>
+                <div class="relative w-full aspect-[16/9] md:aspect-video overflow-hidden rounded-2xl shadow-lg bg-gray-200">
                     <div x-show="activeSlide === 1" x-transition.opacity.duration.500ms class="absolute inset-0">
                         <img src="banner.png" class="w-full h-full object-cover" alt="Banner 1">
                     </div>
-
                     <div x-show="activeSlide === 2" x-transition.opacity.duration.500ms class="absolute inset-0">
                         <img src="best-seller.png" class="w-full h-full object-cover" alt="Banner 2">
                     </div>
-
-                    <button @click="activeSlide = activeSlide === 1 ? totalSlides : activeSlide - 1" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-3 rounded-full text-white transition">
-                        <i class="fa fa-chevron-left"></i>
+                    <button @click="activeSlide = activeSlide === 1 ? totalSlides : activeSlide - 1" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-2 md:p-3 rounded-full text-white transition">
+                        <i class="fa fa-chevron-left text-sm md:text-base"></i>
                     </button>
-
-                    <button @click="activeSlide = activeSlide === totalSlides ? 1 : activeSlide + 1" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-3 rounded-full text-white transition">
-                        <i class="fa fa-chevron-right"></i>
+                    <button @click="activeSlide = activeSlide === totalSlides ? 1 : activeSlide + 1" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-2 md:p-3 rounded-full text-white transition">
+                        <i class="fa fa-chevron-right text-sm md:text-base"></i>
                     </button>
-
                     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
                         <template x-for="i in totalSlides">
-                            <div @click="activeSlide = i" :class="activeSlide === i ? 'bg-white w-8' : 'bg-white/50 w-2'" class="h-2 rounded-full cursor-pointer transition-all"></div>
+                            <div @click="activeSlide = i" :class="activeSlide === i ? 'bg-white w-6 md:w-8' : 'bg-white/50 w-2'" class="h-1.5 md:h-2 rounded-full cursor-pointer transition-all"></div>
                         </template>
                     </div>
                 </div>
             </section>
 
-            <section class="container mx-auto py-4 px-4">
-                <h3 class="text-lg font-bold mb-4 border-l-4 border-green-600 pl-3">Video Produk</h3>
-                <div class="w-full aspect-video overflow-hidden rounded-2xl shadow-lg bg-black">
+            <section class="container mx-auto py-8 px-4">
+                <h3 class="text-lg font-bold mb-4 border-l-4 border-green-600 pl-3 uppercase tracking-wide">Video Produk</h3>
+                <div class="w-full aspect-[16/9] md:aspect-video overflow-hidden rounded-2xl shadow-lg bg-black">
                     <video autoplay loop muted playsinline class="w-full h-full object-cover">
                         <source src="haleeb.mp4" type="video/mp4">
-                        Browser Anda tidak mendukung video.
                     </video>
-                </div>
-            </section>
-
-            <!-- Tentang Singkat -->
-            <section class="bg-gray-100 py-12">
-                <div class="container mx-auto px-4 text-center max-w-2xl">
-                    <h3 class="text-2xl font-bold mb-4">Tentang Kami</h3>
-                    <p class="text-gray-600 leading-relaxed">Kami hadir sebagai solusi belanja kebutuhan harian yang praktis dan terpercaya. Berawal dari keinginan untuk melayani komunitas sekitar, kini kami menyediakan berbagai macam sembako, kebutuhan dapur, hingga perlengkapan rumah tangga dengan kualitas terbaik dan harga yang kompetitif.</p>
                 </div>
             </section>
         </div>
     </template>
 
-    <!-- PAGE: PRODUK -->
     <template x-if="page === 'produk'">
-        <section class="container mx-auto py-10 px-4">
+        <section class="container mx-auto py-6 md:py-10 px-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <h2 class="text-2xl font-bold">Katalog Produk</h2>
-                <div class="flex flex-wrap gap-2">
-                    <button @click="selectedCategory = 'Semua'" :class="selectedCategory === 'Semua' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-4 py-2 rounded-full text-sm font-medium">Semua</button>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button @click="selectedCategory = 'Semua'" :class="selectedCategory === 'Semua' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium">Semua</button>
                     <template x-for="cat in categories">
-                        <button @click="selectedCategory = cat" :class="selectedCategory === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-4 py-2 rounded-full text-sm font-medium" x-text="cat"></button>
+                        <button @click="selectedCategory = cat" :class="selectedCategory === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium" x-text="cat"></button>
                     </template>
                 </div>
             </div>
 
-            <!-- Grid Produk -->
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
                 <template x-for="p in filteredProducts" :key="p.id">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition flex flex-col">
-                        <div class="h-48 bg-gray-200 relative">
-                            <template x-if="p.foto">
-                                <img :src="p.foto" class="w-full h-full object-cover">
-                            </template>
-                            <template x-if="!p.foto">
-                                <div class="w-full h-full flex items-center justify-center text-gray-400 italic">Tanpa Foto</div>
-                            </template>
-                            <div :class="p.stok === 'Tersedia' ? 'bg-green-500' : 'bg-red-500'" class="absolute top-2 right-2 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold" x-text="p.stok"></div>
+                    <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition flex flex-col">
+                        <div class="h-32 md:h-48 bg-gray-200 relative">
+                            <img :src="p.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover" loading="lazy">
+                            <div :class="p.stok === 'Tersedia' ? 'bg-green-500' : 'bg-red-500'" class="absolute top-2 right-2 text-white text-[8px] md:text-[10px] px-1.5 py-0.5 md:px-2 md:py-1 rounded-full uppercase font-bold" x-text="p.stok"></div>
                         </div>
-                        <div class="p-4 flex-grow">
-                            <p class="text-xs text-green-600 font-bold uppercase mb-1" x-text="p.kategori"></p>
-                            <h4 class="font-bold text-lg mb-2" x-text="p.nama"></h4>
-                            <p class="text-orange-600 font-bold text-xl mb-4" x-text="formatRupiah(p.harga)"></p>
-                            <button @click="openDetail(p)" class="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-200 transition">Detail Produk</button>
+                        <div class="p-3 md:p-4 flex-grow">
+                            <p class="text-[10px] md:text-xs text-green-600 font-bold uppercase mb-1" x-text="p.kategori"></p>
+                            <h4 class="font-bold text-sm md:text-lg mb-1 md:mb-2 line-clamp-2 h-10 md:h-14" x-text="p.nama"></h4>
+                            <p class="text-orange-600 font-bold text-base md:text-xl mb-3 md:mb-4" x-text="formatRupiah(p.harga)"></p>
+                            <button @click="openDetail(p)" class="w-full bg-gray-100 text-gray-700 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold hover:bg-gray-200 transition">Detail</button>
                         </div>
                     </div>
                 </template>
@@ -148,23 +130,18 @@ katalog produk
         </section>
     </template>
 
-    <!-- PAGE: TENTANG KAMI -->
     <template x-if="page === 'tentang'">
-        <section class="container mx-auto py-16 px-4">
-            <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-10">
-                <div class="w-full md:w-1/2 rounded-3xl overflow-hidden shadow-2xl">
-                    <img src="logo-toko.jpeg" alt="Toko" class="w-full h-[400px] object-cover">
+        <section class="container mx-auto py-10 md:py-16 px-4">
+            <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                <div class="w-full md:w-1/2 rounded-2xl md:rounded-3xl overflow-hidden shadow-xl">
+                    <img src="logo-toko.jpeg" alt="Toko" class="w-full h-64 md:h-[400px] object-cover">
                 </div>
-                <div class="w-full md:w-1/2">
-                    <h2 class="text-3xl font-bold mb-6 text-green-600">Dedikasi Kami untuk Kebutuhan Harian Anda</h2>
-                    <div class="space-y-4 text-gray-600 leading-relaxed">
-                        <p>Selamat datang di Toko wiinmart. Belanja tanpa batas,berkah tanpa henti. toko kami bukan sekadar tempat jual beli, melainkan bagian dari keseharian masyarakat untuk memenuhi kebutuhan dapur dan rumah tangga.</p>
-                        <p>Kami berkomitmen untuk selalu menyediakan produk yang segar, masa kadaluarsa yang terjaga, dan pelayanan yang ramah. Mulai dari beras, minyak goreng, hingga camilan favorit keluarga, semua kami kurasi dengan teliti.</p>
-                        <p>Kepercayaan Anda adalah prioritas kami, itulah mengapa kami menyediakan website ini untuk mempermudah Anda melihat ketersediaan stok kapan pun dan di mana pun.</p>
-                    </div>
-                    <div class="mt-8 flex space-x-4">
-                        <a href="https://www.instagram.com/wiinmart3?igsh=MWJ3eTB2aDNteGdhYQ%3D%3D" class="text-2xl text-pink-600"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.tiktok.com/@wiin.mart8?_r=1&_t=ZS-9613epC8aFr" class="text-2xl text-black-600"><i class="fab fa-tiktok"></i></a>
+                <div class="w-full md:w-1/2 text-center md:text-left">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-green-600 uppercase">Dedikasi Kami</h2>
+                    <p class="text-gray-600 leading-relaxed mb-6 text-sm md:text-base">Selamat datang di Toko wiinmart. Belanja tanpa batas, berkah tanpa henti. Kami melayani dengan sepenuh hati untuk kebutuhan dapur Anda.</p>
+                    <div class="flex justify-center md:justify-start space-x-6">
+                        <a href="https://www.instagram.com/wiinmart3" class="text-2xl text-pink-600"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.tiktok.com/@wiin.mart8" class="text-2xl text-black"><i class="fab fa-tiktok"></i></a>
                         <a href="https://wa.me/6285397419715" class="text-2xl text-green-500"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
@@ -172,71 +149,119 @@ katalog produk
         </section>
     </template>
 
-    <!-- MODAL DETAIL PRODUK -->
-    <div x-show="detailModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black bg-opacity-50" x-cloak>
-        <div @click.away="detailModal = false" class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div class="relative h-64 bg-gray-100">
+    <div x-show="detailModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
+        <div @click.away="detailModal = false" class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+            <button @click="detailModal = false" class="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur rounded-full p-2 shadow-md hover:bg-white transition">
+                <i class="fa fa-times text-gray-800"></i>
+            </button>
+            <div class="h-56 md:h-72 bg-gray-100">
                 <img :src="activeProduct?.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover">
-                <button @click="detailModal = false" class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md">&times;</button>
             </div>
-            <div class="p-6">
-                <h3 class="text-2xl font-bold mb-2" x-text="activeProduct?.nama"></h3>
+            <div class="p-5 md:p-8">
+                <h3 class="text-xl md:text-2xl font-bold mb-2 text-gray-900 uppercase" x-text="activeProduct?.nama"></h3>
                 <p class="text-2xl font-bold text-orange-600 mb-4" x-text="formatRupiah(activeProduct?.harga)"></p>
-                <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                    <p class="text-sm text-gray-500 uppercase font-bold mb-1">Deskripsi & Ukuran:</p>
-                    <p class="text-gray-700" x-text="activeProduct?.detail"></p>
+                <div class="bg-gray-50 p-4 rounded-xl mb-6">
+                    <p class="text-gray-700 text-sm md:text-base leading-relaxed" x-text="activeProduct?.detail"></p>
                 </div>
-                <a :href="'https://wa.me/6285397419715?text=Halo, saya mau tanya stok: ' + activeProduct?.nama" class="block w-full bg-green-600 text-white text-center py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 transition">Tanya Via WhatsApp</a>
+                <a :href="'https://wa.me/6285397419715?text=Halo Wiinmart, saya mau Beli: ' + activeProduct?.nama" class="block w-full bg-green-600 text-white text-center py-3.5 rounded-xl font-bold shadow-lg hover:bg-green-700 transition active:scale-95">
+                    <i class="fab fa-whatsapp mr-2"></i> Beli Sekarang
+                </a>
             </div>
         </div>
     </div>
 
- <!-- MODAL ADMIN -->
-<div x-show="adminModal" class="fixed inset-0 z-[60] bg-black bg-opacity-50 flex items-center justify-center p-4" x-cloak>
-    <div class="bg-white p-8 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold">Panel Kendali Admin</h3>
-            <button @click="adminModal = false" class="text-gray-400 text-2xl">&times;</button>
-        </div>
-        
-        <div class="space-y-4">
-            <p class="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <i class="fa fa-info-circle mr-2"></i>Sebagai Admin, Anda dapat mengelola daftar produk langsung dari file index.html di VS Code untuk keamanan data permanen.
-            </p>
+    <div x-show="adminModal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 md:p-4" x-cloak x-transition>
+        <div class="bg-white p-5 md:p-8 rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-white py-2 z-10">
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800" x-text="editMode ? 'Edit Produk' : 'Tambah Produk'"></h3>
+                <button @click="closeAdminPanel()" class="text-gray-400 hover:text-red-500 transition text-2xl">&times;</button>
+            </div>
             
-            <div class="border-t pt-4">
-                <h4 class="font-bold mb-2 text-gray-700">Ringkasan Toko:</h4>
-                <ul class="text-sm space-y-1 text-gray-600">
-                    <li>Total Produk: <span x-text="products.length"></span></li>
-                    <li>Total Kategori: <span x-text="categories.length"></span></li>
-                </ul>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-green-50 p-4 rounded-2xl border border-green-100">
+                <div class="flex flex-col space-y-1">
+                    <label class="text-xs font-bold text-green-700 uppercase">Nama Produk</label>
+                    <input type="text" x-model="form.nama" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <label class="text-xs font-bold text-green-700 uppercase">Harga (Rp)</label>
+                    <input type="number" x-model="form.harga" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <label class="text-xs font-bold text-green-700 uppercase">Kategori</label>
+                    <select x-model="form.kategori" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                        <template x-for="cat in categories">
+                            <option :value="cat" x-text="cat"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <label class="text-xs font-bold text-green-700 uppercase">Status Stok</label>
+                    <select x-model="form.stok" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="Tersedia">Tersedia</option>
+                        <option value="Habis">Habis</option>
+                    </select>
+                </div>
+                <div class="flex flex-col space-y-1 md:col-span-2">
+                    <label class="text-xs font-bold text-green-700 uppercase">URL Foto (Link Gambar)</label>
+                    <input type="text" x-model="form.foto" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                </div>
+                <div class="flex flex-col space-y-1 md:col-span-2">
+                    <label class="text-xs font-bold text-green-700 uppercase">Deskripsi Produk</label>
+                    <textarea x-model="form.detail" rows="2" class="p-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"></textarea>
+                </div>
+                <div class="md:col-span-2 flex gap-2">
+                    <button @click="saveProduct()" class="flex-grow bg-green-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-700 transition" x-text="editMode ? 'UPDATE DATA' : 'TAMBAH PRODUK'"></button>
+                    <button x-show="editMode" @click="resetForm()" class="bg-gray-400 text-white px-4 rounded-xl font-bold"><i class="fa fa-undo"></i></button>
+                </div>
             </div>
 
-            <button @click="window.print()" class="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                <i class="fa fa-print"></i> Cetak Daftar Stok
-            </button>
-
-            <button @click="adminModal = false" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700">
-                Keluar Panel
-            </button>
+            <div class="table-responsive bg-white rounded-xl border">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 border-b text-gray-600 uppercase text-[10px]">
+                            <th class="p-3 text-left">Nama</th>
+                            <th class="p-3 text-left">Harga</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <template x-for="p in products" :key="p.id">
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-3 font-semibold text-gray-700" x-text="p.nama"></td>
+                                <td class="p-3 text-orange-600 font-bold" x-text="formatRupiah(p.harga)"></td>
+                                <td class="p-3">
+                                    <div class="flex justify-center space-x-3">
+                                        <button @click="editProduct(p)" class="text-blue-500 hover:text-blue-700 p-1"><i class="fa fa-edit text-lg"></i></button>
+                                        <button @click="deleteProduct(p.id)" class="text-red-500 hover:text-red-700 p-1"><i class="fa fa-trash text-lg"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
-    <!-- FOOTER SOSMED & WA -->
-    <footer class="bg-white border-t py-10 mt-20">
+    <footer class="bg-white border-t py-12">
         <div class="container mx-auto px-4 text-center">
-            <div class="flex justify-center space-x-8 mb-6">
-                <a href="https://www.instagram.com/wiinmart3?igsh=MWJ3eTB2aDNteGdhYQ%3D%3D" class="text-gray-400 hover:text-pink-500 transition text-2xl"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.tiktok.com/@wiin.mart8?_r=1&_t=ZS-9613epC8aFr" class="text-gray-400 hover:text-blue-600 transition text-2xl"><i class="fab fa-tiktok"></i></a>
-                <a href="https://wa.me/6285397419715" class="text-gray-400 hover:text-sky-400 transition text-2xl"><i class="fab fa-whatsapp"></i></a>
+            <h1 class="text-xl font-bold text-green-600 mb-6 uppercase tracking-widest">Toko Wiinmart</h1>
+            <div class="flex justify-center space-x-8 mb-8">
+                <a href="https://www.instagram.com/wiinmart3" class="text-gray-400 hover:text-pink-500 transition text-2xl"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@wiin.mart8" class="text-gray-400 hover:text-black transition text-2xl"><i class="fab fa-tiktok"></i></a>
+                <a href="https://wa.me/6285397419715" class="text-gray-400 hover:text-green-500 transition text-2xl"><i class="fab fa-whatsapp"></i></a>
             </div>
-            <p class="text-gray-500 text-sm">© Katalog Toko wiinmart Modern. Pembelian via WhatsApp & Transfer Bank.</p>
+            <p class="text-gray-500 text-xs md:text-sm">© 2026 Katalog Toko Wiinmart. Modern Shopping Experience.</p>
         </div>
     </footer>
 
-<script>
+    <script>
         function tokoApp() {
+            const initialProducts = [
+                { id: 1, nama: 'Beras Premium 1kg', kategori: 'Sembako', harga: 17000, stok: 'Tersedia', detail: 'Beras pulen kualitas super kemasan 1kg.', foto: 'https://asset.kompas.com/crops/DyKeOYffIJ_5yMrf7ZrcFe6vyr0=/0x0:1000x667/1200x800/data/photo/2024/02/23/65d89598cff5b.jpg' },
+                { id: 2, nama: 'Indomie Goreng', kategori: 'Sembako', harga: 3500, stok: 'Tersedia', detail: 'Mie instan goreng rasa original.', foto: 'https://tse3.mm.bing.net/th/id/OIP.8O8e3Ak3OzwpuzqBorYHkwHaFU?pid=Api&P=0&h=180' }
+            ];
+
             return {
                 page: 'home',
                 search: '',
@@ -244,24 +269,65 @@ katalog produk
                 detailModal: false,
                 adminModal: false,
                 activeProduct: null,
+                editMode: false,
                 categories: ['Sembako', 'Sabun', 'Minuman', 'Kebutuhan Rumah'],
-                products: [
-                    { id: 1, nama: 'Beras Premium 1kg', kategori: 'Sembako', harga: 17000, stok: 'Tersedia', detail: 'Beras pulen kualitas super kemasan 1kg.', foto: 'https://asset.kompas.com/crops/DyKeOYffIJ_5yMrf7ZrcFe6vyr0=/0x0:1000x667/1200x800/data/photo/2024/02/23/65d89598cff5b.jpg' },
-                    { id: 2, nama: 'Indomie Goreng', kategori: 'Sembako', harga: 3500, stok: 'Tersedia', detail: 'Mie instan goreng rasa original.', foto: 'https://tse3.mm.bing.net/th/id/OIP.8O8e3Ak3OzwpuzqBorYHkwHaFU?pid=Api&P=0&h=180' },
-                    { id: 3, nama: 'Minyak Goreng 2L', kategori: 'Sembako', harga: 43000, stok: 'Tersedia', detail: 'Minyak kelapa sawit jernih kemasan pouch 2 liter.', foto: 'https://tse4.mm.bing.net/th/id/OIP.2u5U1TdbC2ypANyy-QkY1QAAAA?pid=Api&P=0&h=180' },
-                    { id: 4, nama: 'Susu Frisian Flag Full Cream', kategori: 'Minuman', harga: 7000, stok: 'Tersedia', detail: 'Susu cair segar kemasan 225ml.', foto: 'data:image/jpeg;base64,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' },
-                    { id: 5, nama: 'Ciptadent Pasta Gigi', kategori: 'Sabun', harga: 4000, stok: 'Tersedia', detail: 'Pasta Gigi kemasan 75g.', foto: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTkg8al_NqeM3RIxm-pdsb74gbzqnBXFxi9VaD7G9FGoD77IbTKXSMJ2JUA5W4XK9CaTn0ayPbduSW4Ea6c21R-_045zR_5oKmN-zs41J4D5TaH2ap6I2mKr2TWc_NbPXYSgTTiWQ&usqp=CAc' },
-                    { id: 6, nama: 'Hanger Baju Besi', kategori: 'Kebutuhan Rumah', harga: 15000, stok: 'Tersedia', detail: 'Hanger Baju Besi Bewarna isi 10pcs.', foto: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQMcSmHP7DHdciQnNuYYYr9q6o8DO8pRZNpi9AxzIXPcOfObIEOeXFxhe2pB1zPt51YTnxrTSEUkAfVA7oZlvkH5-pXR2UdmX6niPDAca6ljJo7sQeqSxW68k_ncSyQ4MdfcJoI1XKJnw&usqp=CAc' },
-                ],
-                
+                products: JSON.parse(localStorage.getItem('wiinmart_db')) || initialProducts,
+                form: { id: null, nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' },
+
                 loginAdmin() {
                     let password = prompt("Masukkan Kata Sandi Admin:");
                     if (password === "admin123") {
-                        alert("Login Berhasil! Anda sekarang masuk sebagai Admin.");
                         this.adminModal = true;
-                    } else {
+                    } else if (password !== null) {
                         alert("Kata sandi salah!");
                     }
+                },
+
+                saveProduct() {
+                    if (!this.form.nama || !this.form.harga) return alert("Nama dan Harga wajib diisi");
+                    
+                    if (this.editMode) {
+                        const index = this.products.findIndex(p => p.id === this.form.id);
+                        if (index !== -1) {
+                            this.products[index] = { ...this.form };
+                        }
+                    } else {
+                        const newProd = { ...this.form, id: Date.now() };
+                        this.products.unshift(newProd);
+                    }
+                    
+                    this.persist();
+                    this.resetForm();
+                    alert("Berhasil disimpan!");
+                },
+
+                editProduct(p) {
+                    this.editMode = true;
+                    this.form = { ...p };
+                    // Scroll ke atas form admin agar terlihat di HP
+                    const modal = document.querySelector('[x-show="adminModal"] .overflow-y-auto');
+                    modal.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                deleteProduct(id) {
+                    if (confirm('Hapus produk ini secara permanen?')) {
+                        this.products = this.products.filter(p => p.id !== id);
+                        this.persist();
+                    }
+                },
+
+                persist() {
+                    localStorage.setItem('wiinmart_db', JSON.stringify(this.products));
+                },
+
+                resetForm() {
+                    this.form = { id: null, nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' };
+                    this.editMode = false;
+                },
+
+                closeAdminPanel() {
+                    this.adminModal = false;
+                    this.resetForm();
                 },
 
                 get filteredProducts() {
@@ -283,7 +349,7 @@ katalog produk
                 },
 
                 formatRupiah(num) {
-                    return 'Rp ' + (num ? num.toLocaleString('id-ID') : '0');
+                    return 'Rp ' + (num ? parseInt(num).toLocaleString('id-ID') : '0');
                 }
             }
         }
