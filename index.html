@@ -132,7 +132,7 @@
         <section class="container mx-auto py-10 md:py-16 px-4">
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10">
                 <div class="w-full md:w-1/2 rounded-2xl md:rounded-3xl overflow-hidden shadow-xl">
-                    <img src="ad26eff9-2c5f-4c17-bc41-a9f73ab21cad.jpg" alt="Toko" class="w-full h-64 md:h-[400px] object-cover">
+                    <img src="logo-toko.jpeg" alt="Toko" class="w-full h-64 md:h-[400px] object-cover">
                 </div>
                 <div class="w-full md:w-1/2 text-center md:text-left">
                     <h2 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-green-600 uppercase">Dedikasi Kami</h2>
@@ -149,14 +149,37 @@
 
     <div x-show="detailModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
         <div @click.away="detailModal = false" class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
-            <button @click="detailModal = false" class="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur rounded-full p-2 shadow-md">&times;</button>
-            <div class="h-56 md:h-72">
+            <button @click="detailModal = false" class="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur rounded-full p-2 shadow-md hover:bg-white transition">
+                <i class="fa fa-times text-gray-800"></i>
+            </button>
+            <div class="h-64 md:h-72 bg-gray-100">
                 <img :src="activeProduct?.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover">
             </div>
-            <div class="p-5 md:p-8">
-                <h3 class="text-xl md:text-2xl font-bold mb-2 uppercase" x-text="activeProduct?.nama"></h3>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-2xl font-bold uppercase" x-text="activeProduct?.nama"></h3>
+                    <span :class="activeProduct?.stok === 'Tersedia' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" 
+                          class="text-[10px] px-2 py-1 rounded-full font-bold border" 
+                          x-text="activeProduct?.stok"></span>
+                </div>
                 <p class="text-2xl font-bold text-orange-600 mb-4" x-text="formatRupiah(activeProduct?.harga)"></p>
-                <a :href="'https://wa.me/6285397419715?text=Halo Wiinmart, saya mau Beli: ' + activeProduct?.nama" class="block w-full bg-green-600 text-white text-center py-3.5 rounded-xl font-bold shadow-lg hover:bg-green-700 transition">Beli Sekarang</a>
+                
+                <div class="bg-gray-50 p-4 rounded-xl mb-6">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Detail Produk:</p>
+                    <p class="text-gray-700 text-sm leading-relaxed" x-text="activeProduct?.detail || 'Tidak ada deskripsi tambahan.'"></p>
+                </div>
+                
+                <template x-if="activeProduct?.stok === 'Tersedia'">
+                    <a :href="'https://wa.me/6285397419715?text=Halo Wiinmart, saya mau pesan: ' + activeProduct?.nama" 
+                       class="block w-full bg-green-600 text-white text-center py-4 rounded-xl font-bold shadow-lg hover:bg-green-700 transition uppercase active:scale-95">
+                        PESAN VIA WHATSAPP
+                    </a>
+                </template>
+                <template x-if="activeProduct?.stok === 'Habis'">
+                    <button disabled class="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold cursor-not-allowed uppercase">
+                        STOK SEDANG KOSONG
+                    </button>
+                </template>
             </div>
         </div>
     </div>
