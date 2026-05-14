@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
         [x-cloak] { display: none !important; }
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -106,7 +110,7 @@
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                <template x-for="p in filteredProducts" :key="p.id">
+                <template x-for="p in filteredProducts" :key="p.firebaseId">
                     <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition flex flex-col">
                         <div class="h-32 md:h-48 bg-gray-200 relative">
                             <img :src="p.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover">
@@ -128,7 +132,7 @@
         <section class="container mx-auto py-10 md:py-16 px-4">
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-10">
                 <div class="w-full md:w-1/2 rounded-2xl md:rounded-3xl overflow-hidden shadow-xl">
-                    <img src="ad26eff9-2c5f-4c17-bc41-a9f73ab21cad.jpg" alt="Toko" class="w-full h-64 md:h-[400px] object-cover">
+                    <img src="logo-toko.jpeg" alt="Toko" class="w-full h-64 md:h-[400px] object-cover">
                 </div>
                 <div class="w-full md:w-1/2 text-center md:text-left">
                     <h2 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-green-600 uppercase">Dedikasi Kami</h2>
@@ -195,14 +199,14 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y">
-                        <template x-for="p in products" :key="p.id">
+                        <template x-for="p in products" :key="p.firebaseId">
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="p-3 font-semibold text-gray-700" x-text="p.nama"></td>
                                 <td class="p-3 text-orange-600 font-bold" x-text="formatRupiah(p.harga)"></td>
                                 <td class="p-3">
                                     <div class="flex justify-center space-x-3">
                                         <button @click="editProduct(p)" class="text-blue-500 p-1"><i class="fa fa-edit text-lg"></i></button>
-                                        <button @click="deleteProduct(p.id)" class="text-red-500 p-1"><i class="fa fa-trash text-lg"></i></button>
+                                        <button @click="deleteProduct(p.firebaseId)" class="text-red-500 p-1"><i class="fa fa-trash text-lg"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -226,12 +230,22 @@
     </footer>
 
     <script>
-        function tokoApp() {
-            const initialProducts = [
-                { id: 1, nama: 'Beras Premium 1kg', kategori: 'Sembako', harga: 17000, stok: 'Tersedia', detail: 'Beras pulen kualitas super kemasan 1kg.', foto: 'https://asset.kompas.com/crops/DyKeOYffIJ_5yMrf7ZrcFe6vyr0=/0x0:1000x667/1200x800/data/photo/2024/02/23/65d89598cff5b.jpg' },
-                { id: 2, nama: 'Indomie Goreng', kategori: 'Sembako', harga: 3500, stok: 'Tersedia', detail: 'Mie instan goreng rasa original.', foto: 'https://tse3.mm.bing.net/th/id/OIP.8O8e3Ak3OzwpuzqBorYHkwHaFU?pid=Api&P=0&h=180' }
-            ];
+        // KONFIGURASI DARI SCREENSHOT ANDA
+        const firebaseConfig = {
+          apiKey: "AIzaSyBbd7jLEZaksaI4exRolJ34x4Lx3ZIsuvA",
+          authDomain: "wiinmart.firebaseapp.com",
+          projectId: "wiinmart",
+          storageBucket: "wiinmart.firebasestorage.app",
+          messagingSenderId: "1011739726708",
+          appId: "1:1011739726708:web:ccb1fd5291070fdb771221",
+          measurementId: "G-ZPJTSE98L4",
+          databaseURL: "https://wiinmart-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
 
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function tokoApp() {
             return {
                 page: 'home',
                 search: '',
@@ -241,8 +255,16 @@
                 activeProduct: null,
                 editMode: false,
                 categories: ['Sembako', 'Sabun', 'Minuman', 'Kebutuhan Rumah'],
-                products: JSON.parse(localStorage.getItem('wiinmart_db')) || initialProducts,
-                form: { id: null, nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' },
+                products: [], // Diisi otomatis dari Firebase
+                form: { nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' },
+
+                init() {
+                    // Hubungkan ke Firebase secara Real-time
+                    db.ref('produk').on('value', (snap) => {
+                        const val = snap.val();
+                        this.products = val ? Object.keys(val).map(k => ({ firebaseId: k, ...val[k] })) : [];
+                    });
+                },
 
                 loginAdmin() {
                     let password = prompt("Masukkan Kata Sandi Admin:");
@@ -255,29 +277,25 @@
 
                 saveProduct() {
                     if (!this.form.nama || !this.form.harga) return alert("Nama dan Harga wajib diisi");
-                    
                     const fileInput = document.getElementById('admFile');
-                    const processData = (imageSrc) => {
-                        if (imageSrc) this.form.foto = imageSrc;
+                    
+                    const upload = (img) => {
+                        if (img) this.form.foto = img;
                         if (this.editMode) {
-                            const index = this.products.findIndex(p => p.id === this.form.id);
-                            if (index !== -1) this.products[index] = { ...this.form };
+                            db.ref('produk/' + this.form.firebaseId).update(this.form);
                         } else {
-                            const newProd = { ...this.form, id: Date.now() };
-                            this.products.unshift(newProd);
+                            db.ref('produk').push(this.form);
                         }
-                        this.persist();
-                        this.resetForm();
-                        if(fileInput) fileInput.value = "";
-                        alert("Berhasil disimpan!");
+                        this.closeAdminPanel();
+                        alert("Berhasil disimpan ke Online Database!");
                     };
 
-                    if (fileInput && fileInput.files && fileInput.files[0]) {
+                    if (fileInput.files[0]) {
                         const reader = new FileReader();
-                        reader.onload = (e) => processData(e.target.result);
+                        reader.onload = (e) => upload(e.target.result);
                         reader.readAsDataURL(fileInput.files[0]);
                     } else {
-                        processData(this.form.foto);
+                        upload(this.form.foto);
                     }
                 },
 
@@ -287,19 +305,23 @@
                     document.querySelector('[x-show="adminModal"] .overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
                 },
 
-                deleteProduct(id) {
-                    if (confirm('Hapus produk ini?')) {
-                        this.products = this.products.filter(p => p.id !== id);
-                        this.persist();
+                deleteProduct(fId) {
+                    if (confirm('Hapus produk ini secara online?')) {
+                        db.ref('produk/' + fId).remove();
                     }
                 },
 
-                persist() { localStorage.setItem('wiinmart_db', JSON.stringify(this.products)); },
-                resetForm() {
-                    this.form = { id: null, nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' };
-                    this.editMode = false;
+                closeAdminPanel() { 
+                    this.adminModal = false; 
+                    this.resetForm(); 
                 },
-                closeAdminPanel() { this.adminModal = false; this.resetForm(); },
+                
+                resetForm() {
+                    this.form = { nama: '', harga: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '' };
+                    this.editMode = false;
+                    if(document.getElementById('admFile')) document.getElementById('admFile').value = "";
+                },
+
                 get filteredProducts() {
                     return this.products.filter(p => {
                         const matchSearch = p.nama.toLowerCase().includes(this.search.toLowerCase());
@@ -307,6 +329,7 @@
                         return matchSearch && matchCat;
                     });
                 },
+
                 filterCategory(cat) { this.selectedCategory = cat; this.page = 'produk'; },
                 openDetail(p) { this.activeProduct = p; this.detailModal = true; },
                 formatRupiah(num) { return 'Rp ' + (num ? parseInt(num).toLocaleString('id-ID') : '0'); }
