@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Toko wiinmart</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#16a34a">
+    
+    <link rel="icon" type="image/jpeg" href="logo-192.jpg">
+    <link rel="apple-touch-icon" href="logo-192.jpg">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        #cart-sidebar { 
+            position: fixed; right: -100%; top: 0; width: 350px; height: 100%; 
+            background: #fff; box-shadow: -10px 0 30px rgba(0,0,0,0.1); 
+            z-index: 2000; transition: 0.4s; display: flex; flex-direction: column; 
+        }
+        #cart-sidebar.active { right: 0; }
+        @media (max-width: 400px) { #cart-sidebar { width: 100%; } }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans" x-data="tokoApp()">
+
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-green-600 tracking-tight cursor-pointer">
+                <span @click="clickAdminSecret()">TOKO</span><span @click="resetToHome()" class="text-orange-500">WIINMART</span>
+            </h1>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex space-x-6 font-medium">
+                    <a @click="resetToHome()" href="#" class="hover:text-green-600">Home</a>
+                    <a @click="page = 'produk'; selectedCategory = 'Semua';" href="#" class="hover:text-green-600">Produk</a>
+                    <a @click="page = 'tentang'" href="#" class="hover:text-green-600">Tentang Kami</a>
+                </div>
+                <button @click="cartOpen = true" class="relative text-gray-500 hover:text-green-600 p-2">
+                    <i class="fa fa-shopping-bag text-lg"></i>
+                    <span x-show="cart.length > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full" x-text="cart.reduce((a, b) => a + b.qty, 0)"></span>
+                </button>
+            </div>
+        </div>
+        <div class="md:hidden flex justify-around bg-white border-t py-2 text-xs font-bold uppercase text-gray-500">
+            <button @click="resetToHome()" :class="page === 'home' ? 'text-green-600' : ''">Home</button>
+            <button @click="page = 'produk'; selectedCategory = 'Semua';" :class="page === 'produk' ? 'text-green-600' : ''">Produk</button>
+            <button @click="page = 'tentang'" :class="page === 'tentang' ? 'text-green-600' : ''">Tentang</button>
+        </div>
+    </nav>
+
+    <div id="pwa-install-banner" class="fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-green-600 text-white p-4 rounded-2xl shadow-2xl z-[9999] flex items-center justify-between transition-all duration-500 transform translate-y-20 opacity-0">
+        <div class="flex items-center gap-3">
+            <img src="logo-192.jpg" class="w-12 h-12 rounded-xl border border-white/20 shadow-sm">
+            <div>
+                <p class="text-sm font-extrabold tracking-tight">Instal Aplikasi WiinMart</p>
+                <p class="text-[11px] opacity-90">Belanja lebih praktis & hemat kuota!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-pwa-install" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition uppercase tracking-wide">Instal</button>
+            <button id="btn-pwa-close" class="text-white hover:text-gray-200 bg-black/10 hover:bg-black/30 px-3 py-1 rounded-xl text-xl font-bold transition">&times;</button>
+        </div>
+    </div>
+
+    <div id="cart-sidebar" :class="cartOpen ? 'active' : ''" class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">Keranjang Belanja</h3>
+            <button @click="cartOpen = false" class="text-2xl text-gray-400">&times;</button>
+        </div>
+        <hr class="mb-4">
+        <div class="flex-grow overflow-y-auto">
+            <template x-for="(item, index) in cart" :key="item.cartId">
+                <div class="flex items-center gap-3 mb-4 bg-gray-50 p-2 rounded-lg">
+                    <img :src="item.foto" class="w-12 h-12 object-cover rounded shadow-sm">
+                    <div class="flex-grow">
+                        <p class="text-xs font-bold line-clamp-1" x-text="item.nama + ' (' + item.varian + ')'"></p>
+                        <p class="text-xs text-orange-600 font-bold" x-text="formatRupiah(item.hargaTerpilih)"></p>
+                    </div>
+                    <input type="number" x-model.number="item.qty" @input="saveCartToStorage()" min="1" class="w-12 p-1 border text-xs rounded text-center">
+                    <button @click="removeFromCart(index)" class="text-red-500 p-1"><i class="fa fa-trash"></i></button>
+                </div>
+            </template>
+            <template x-if="cart.length === 0">
+                <p class="text-center text-gray-400 py-10">Keranjang masih kosong</p>
+            </template>
+        </div>
+        <div class="border-t pt-4">
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-bold">Total:</span>
+                <span class="text-xl font-bold text-orange-600" x-text="formatRupiah(cartTotal)"></span>
+            </div>
+            <button @click="checkoutWhatsApp()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold mb-2 shadow-lg">CHECKOUT KE WHATSAPP</button>
+            <button @click="cartOpen = false" class="w-full border border-gray-300 py-2 rounded-xl text-sm">KEMBALI BELANJA</button>
+        </div>
+    </div>
+
+    <main>
+        <template x-if="page === 'home'">
+            <div class="overflow-hidden">
+                <section class="bg-green-600 py-10 md:py-16 px-4 text-center text-white">
+                    <h2 class="text-2xl md:text-5xl font-bold mb-4">Belanja Harian Jadi Mudah</h2>
+                    <p class="mb-6 md:mb-8 opacity-90 text-sm md:text-base">Cari produk kebutuhan Anda di bawah ini</p>
+                    <div class="max-w-xl mx-auto flex shadow-lg rounded-lg overflow-hidden">
+                        <input type="text" x-model="search" @keyup.enter="page = 'produk'" placeholder="Cari beras, mie, sabun..." class="w-full px-4 py-3 text-gray-900 text-sm focus:outline-none">
+                        <button @click="page = 'produk'" class="bg-orange-500 px-4 md:px-6 py-3 hover:bg-orange-600 transition"><i class="fa fa-search"></i></button>
+                    </div>
+                </section>
+
+                <section class="container mx-auto py-8 md:py-12 px-4">
+                    <h3 class="text-lg font-bold mb-6 border-l-4 border-green-600 pl-3 uppercase tracking-wide">Kategori Pilihan</h3>
+                    <div class="flex overflow-x-auto pb-4 gap-4 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
+                        <template x-for="cat in categories" :key="cat">
+                            <div @click="filterCategory(cat)" 
+                                 class="min-w-[140px] flex-shrink-0 snap-center bg-white p-6 rounded-xl shadow-sm hover:shadow-md cursor-pointer text-center border border-gray-100 transition md:min-w-full">
+                                <i class="fa fa-box text-green-500 text-2xl mb-2"></i>
+                                <p class="font-semibold text-sm md:text-base" x-text="cat"></p>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+
+                <section class="container mx-auto py-4 px-4" x-data="{ 
+                    activeSlide: 1, 
+                    totalSlides: 2, 
+                    init() { 
+                        setInterval(() => { this.activeSlide = this.activeSlide === this.totalSlides ? 1 : this.activeSlide + 1 }, 5000) 
+                    } 
+                }">
+                    <h3 class="text-lg font-bold mb-4 border-l-4 border-orange-500 pl-3 uppercase tracking-wide">Promo Spesial</h3>
+                    <div class="relative w-full aspect-[16/9] md:aspect-video overflow-hidden rounded-2xl shadow-lg bg-gray-200">
+                        <div x-show="activeSlide === 1" x-transition.opacity.duration.500ms class="absolute inset-0">
+                            <img src="banner-toko.jpeg" class="w-full h-full object-cover" alt="Banner 1">
+                        </div>
+                        <div x-show="activeSlide === 2" x-transition.opacity.duration.500ms class="absolute inset-0">
+                            <img src="best-seller.jpeg" class="w-full h-full object-cover" alt="Banner 2">
+                        </div>
+                        <button @click="activeSlide = activeSlide === 1 ? totalSlides : activeSlide - 1" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-2 md:p-3 rounded-full text-white transition">
+                            <i class="fa fa-chevron-left text-sm md:text-base"></i>
+                        </button>
+                        <button @click="activeSlide = activeSlide === totalSlides ? 1 : activeSlide + 1" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 p-2 md:p-3 rounded-full text-white transition">
+                            <i class="fa fa-chevron-right text-sm md:text-base"></i>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <template x-if="page === 'produk'">
+            <section class="container mx-auto py-6 md:py-10 px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <h2 class="text-2xl font-bold">Katalog Produk</h2>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                        <button @click="selectedCategory = 'Semua'" :class="selectedCategory === 'Semua' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium">Semua</button>
+                        <template x-for="cat in categories">
+                            <button @click="selectedCategory = cat" :class="selectedCategory === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border'" class="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium" x-text="cat"></button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                    <template x-for="p in filteredProducts" :key="p.firebaseId">
+                        <div @click="openDetail(p)" class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition flex flex-col cursor-pointer group">
+                            <div class="h-32 md:h-48 bg-gray-200 relative overflow-hidden">
+                                <img :src="p.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <div :class="p.stok === 'Tersedia' ? 'bg-green-500' : 'bg-red-500'" class="absolute top-2 right-2 text-white text-[8px] md:text-[10px] px-1.5 py-0.5 md:px-2 md:py-1 rounded-full uppercase font-bold" x-text="p.stok"></div>
+                            </div>
+                            <div class="p-3 md:p-4 flex-grow flex flex-col">
+                                <p class="text-[10px] md:text-xs text-green-600 font-bold uppercase mb-1" x-text="p.kategori"></p>
+                                <h4 class="font-bold text-sm md:text-base mb-1 md:mb-2 line-clamp-2 h-10 md:h-12 group-hover:text-green-600 transition" x-text="p.nama"></h4>
+                                <p class="text-orange-600 font-extrabold text-sm md:text-lg mt-auto" x-text="p.listVarian && p.listVarian.length > 0 ? formatRupiah(p.listVarian[0].harga) : formatRupiah(p.hargaPcs || p.harga)"></p>
+                                <template x-if="p.listVarian && p.listVarian.length > 1">
+                                    <p class="text-[9px] md:text-xs text-gray-400 font-medium mt-0.5" x-text="'+' + (p.listVarian.length - 1) + ' Varian Ukuran'"></p>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+        </template>
+
+        <template x-if="page === 'tentang'">
+            <section class="container mx-auto py-10 md:py-16 px-4">
+                <div class="max-w-5xl mx-auto">
+                    <div class="w-full aspect-video rounded-2xl md:rounded-3xl overflow-hidden shadow-xl mb-10">
+                        <img src="foto-wiinmart.jpg" alt="Toko" class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-center max-w-3xl mx-auto">
+                        <h2 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-green-600 uppercase">Dedikasi Kami</h2>
+                        <p class="text-gray-600 leading-relaxed mb-8 text-sm md:text-base">Selamat datang di Toko wiinmart. Belanja tanpa batas, berkah tanpa henti.</p>
+                        <div class="flex justify-center space-x-8">
+                            <a href="https://www.instagram.com/wiinmart3" class="text-2xl text-pink-600 hover:scale-110 transition-transform"><i class="fab fa-instagram"></i></a>
+                            <a href="https://www.tiktok.com/@wiin.mart8" class="text-2xl text-black hover:scale-110 transition-transform"><i class="fab fa-tiktok"></i></a>
+                            <a href="https://wa.me/6285397419715" class="text-2xl text-green-500 hover:scale-110 transition-transform"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </template>
+    </main>
+
+    <div x-show="detailModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
+        <div @click.away="detailModal = false" class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+            <button @click="detailModal = false" class="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur rounded-full p-2 shadow-md hover:bg-white transition">
+                <i class="fa fa-times text-gray-800"></i>
+            </button>
+            <div class="h-64 md:h-72 bg-gray-100">
+                <img :src="activeProduct?.foto || 'https://via.placeholder.com/400x300?text=No+Image'" class="w-full h-full object-cover">
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-2xl font-bold uppercase" x-text="activeProduct?.nama"></h3>
+                    <span :class="activeProduct?.stok === 'Tersedia' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="text-[10px] px-2 py-1 rounded-full font-bold border" x-text="activeProduct?.stok"></span>
+                </div>
+                <div class="mb-4">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider">Pilih Varian Ukuran:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="(v, index) in getActiveVarianList()" :key="index">
+                            <button @click="selectVarian(v)" 
+                                    :class="currentVarianName === v.namaVarian ? 'border-green-600 bg-green-50 text-green-700 font-extrabold' : 'border-gray-200 bg-white text-gray-600'" 
+                                    class="py-2 px-4 border-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center min-w-[70px]">
+                                <span class="uppercase" x-text="v.namaVarian"></span>
+                                <span class="text-[10px] font-normal text-gray-500 mt-0.5" x-text="formatRupiah(v.harga)"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                <p class="text-3xl font-extrabold text-orange-600 mb-4" x-text="formatRupiah(currentVarianHarga)"></p>
+                <div class="bg-gray-50 p-4 rounded-xl mb-6">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Detail Produk:</p>
+                    <p class="text-gray-700 text-sm leading-relaxed" x-text="activeProduct?.detail || 'Tidak ada deskripsi tambahan.'"></p>
+                </div>
+                <template x-if="activeProduct?.stok === 'Tersedia'">
+                    <button @click="addActiveToCart(); detailModal = false" class="block w-full bg-green-600 text-white text-center py-4 rounded-xl font-bold shadow-lg hover:bg-green-700 transition uppercase active:scale-95">TAMBAH KE KERANJANG</button>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="adminModal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak x-transition>
+        <div class="bg-white p-5 md:p-8 rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-white py-2 z-10 border-b">
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800" x-text="editMode ? 'Edit Produk' : 'Tambah Produk'"></h3>
+                <button @click="closeAdminPanel()" class="text-gray-400 hover:text-red-500 transition text-2xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-green-50 p-4 rounded-2xl border border-green-100">
+                <input type="text" x-model="form.nama" placeholder="Nama Produk" class="p-2.5 border rounded-lg md:col-span-2 shadow-xs">
+                <div class="md:col-span-2 bg-white p-4 rounded-xl border border-green-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-xs font-bold text-green-700 uppercase tracking-wide">Pengaturan Varian Harga</label>
+                        <button type="button" @click="addFormVarian()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition"><i class="fa fa-plus mr-1"></i> Tambah Kolom Varian</button>
+                    </div>
+                    <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                        <template x-for="(v, index) in form.listVarian" :key="index">
+                            <div class="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border">
+                                <input type="text" x-model="v.namaVarian" placeholder="Nama Ukuran (pcs, box, kg)" class="flex-1 p-2 border rounded-md text-xs uppercase font-semibold">
+                                <input type="number" x-model.number="v.harga" placeholder="Harga (Rp)" class="w-1/3 p-2 border rounded-md text-xs font-bold text-orange-600">
+                                <button type="button" @click="removeFormVarian(index)" class="text-red-500 hover:text-red-700 p-1" x-show="form.listVarian.length > 1"><i class="fa fa-minus-circle text-lg"></i></button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <select x-model="form.kategori" class="p-2.5 border rounded-lg">
+                    <template x-for="cat in categories"><option :value="cat" x-text="cat"></option></template>
+                </select>
+                <select x-model="form.stok" class="p-2.5 border rounded-lg">
+                    <option value="Tersedia">Tersedia</option>
+                    <option value="Habis">Habis</option>
+                </select>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-green-700 uppercase">Foto Produk</label>
+                    <input type="file" id="admFile" accept="image/*" class="w-full p-2 border rounded-lg bg-white mb-2 text-xs">
+                    <input type="text" x-model="form.foto" placeholder="Atau tempel link foto di sini" class="p-2.5 border rounded-lg text-xs w-full">
+                </div>
+                <textarea x-model="form.detail" rows="2" placeholder="Deskripsi tambahan..." class="p-2.5 border rounded-lg md:col-span-2 text-sm"></textarea>
+                <button @click="saveProduct()" class="md:col-span-2 bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-green-700 transition uppercase tracking-wide" x-text="editMode ? 'UPDATE DATA SEKARANG' : 'SIMPAN KE CLOUD DATABASE'"></button>
+            </div>
+            
+            <div class="mb-4 relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400"><i class="fa fa-search"></i></span>
+                <input type="text" x-model="searchAdmin" placeholder="Cari nama produk di daftar tabel..." class="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-50">
+            </div>
+            
+            <div class="table-responsive bg-white rounded-xl border">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 border-b text-gray-600 uppercase text-[10px]">
+                            <th class="p-3 text-left">Nama</th>
+                            <th class="p-3 text-left">Varian & Harga Terdaftar</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <template x-for="p in filteredAdminProducts" :key="p.firebaseId">
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-3 font-semibold text-gray-700 text-xs md:text-sm" x-text="p.nama"></td>
+                                <td class="p-3 text-xs">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <template x-for="v in (p.listVarian || [{namaVarian: 'pcs', harga: p.hargaPcs || p.harga || ''}])">
+                                            <span class="bg-gray-100 border text-gray-600 px-2 py-0.5 rounded font-medium">
+                                                <span class="uppercase font-bold text-green-600" x-text="v.namaVarian"></span>: <span class="text-orange-600 font-bold" x-text="formatRupiah(v.harga)"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="flex justify-center space-x-3">
+                                        <button @click="editProduct(p)" class="text-blue-500 p-1"><i class="fa fa-edit text-lg"></i></button>
+                                        <button @click="deleteProduct(p.firebaseId)" class="text-red-500 p-1"><i class="fa fa-trash text-lg"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBbd7jLEZaksaI4exRolJ34x4Lx3ZIsuvA",
+          authDomain: "wiinmart.firebaseapp.com",
+          projectId: "wiinmart",
+          storageBucket: "wiinmart.firebasestorage.app",
+          messagingSenderId: "1011739726708",
+          appId: "1:1011739726708:web:ccb1fd5291070fdb771221",
+          measurementId: "G-ZPJTSE98L4",
+          databaseURL: "https://wiinmart-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function tokoApp() {
+            return {
+                page: 'home', search: '', searchAdmin: '', selectedCategory: 'Semua',
+                detailModal: false, adminModal: false, cartOpen: false, activeProduct: null, editMode: false,
+                currentVarianName: 'pcs', currentVarianHarga: 0, adminClickCount: 0,
+                categories: ['Sembako', 'Sabun', 'Snack', 'Bumbu', 'Makanan', 'Minuman', 'Minuman serbuk', 'Mie instant', 'Es krim', 'Cosmetic', 'Obat', 'Atk', 'Kebutuhan Rumah'],
+                products: [], cart: [],
+                form: { nama: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '', listVarian: [{namaVarian: 'pcs', harga: ''}] },
+
+                init() {
+                    const savedCart = localStorage.getItem('wiinmart_cart');
+                    if (savedCart) {
+                        try { this.cart = JSON.parse(savedCart); } catch(e) { this.cart = []; }
+                    }
+                    db.ref('produk').on('value', (snap) => {
+                        const val = snap.val();
+                        this.products = val ? Object.keys(val).map(k => ({ firebaseId: k, ...val[k] })) : [];
+                    });
+                },
+                saveCartToStorage() { localStorage.setItem('wiinmart_cart', JSON.stringify(this.cart)); },
+                resetToHome() { this.page = 'home'; this.selectedCategory = 'Semua'; this.search = ''; },
+                clickAdminSecret() {
+                    this.adminClickCount++;
+                    if (this.adminClickCount >= 5) {
+                        this.adminClickCount = 0;
+                        this.loginAdmin();
+                    }
+                },
+                loginAdmin() {
+                    let password = prompt("Masukkan Kata Sandi Admin:");
+                    if (password === "WIINMART123") this.adminModal = true;
+                },
+                addFormVarian() { this.form.listVarian.push({ namaVarian: '', harga: '' }); },
+                removeFormVarian(index) { this.form.listVarian.splice(index, 1); },
+                getActiveVarianList() {
+                    if (this.activeProduct && this.activeProduct.listVarian && this.activeProduct.listVarian.length > 0) {
+                        return this.activeProduct.listVarian;
+                    }
+                    if (this.activeProduct) {
+                        return [{ namaVarian: 'pcs', harga: this.activeProduct.hargaPcs || this.activeProduct.harga || 0 }];
+                    }
+                    return [];
+                },
+                selectVarian(v) { this.currentVarianName = v.namaVarian; this.currentVarianHarga = v.harga; },
+                addActiveToCart() {
+                    if(this.activeProduct.stok === 'Habis') return alert("Stok sedang kosong!");
+                    const itemKey = this.activeProduct.firebaseId + '-' + this.currentVarianName;
+                    const exist = this.cart.find(i => i.cartId === itemKey);
+                    if(exist) { 
+                        exist.qty++; 
+                    } else {
+                        this.cart.push({ 
+                            firebaseId: this.activeProduct.firebaseId,
+                            nama: this.activeProduct.nama,
+                            foto: this.activeProduct.foto || 'https://via.placeholder.com/400x300?text=No+Image',
+                            cartId: itemKey, 
+                            varian: this.currentVarianName, 
+                            hargaTerpilih: this.currentVarianHarga, 
+                            qty: 1 
+                        });
+                    }
+                    this.saveCartToStorage();
+                    alert("Berhasil masuk keranjang!");
+                },
+                removeFromCart(index) { this.cart.splice(index, 1); this.saveCartToStorage(); },
+                get cartTotal() { return this.cart.reduce((t, i) => t + (i.hargaTerpilih * i.qty), 0); },
+                checkoutWhatsApp() {
+                    let pesan = "Halo Wiinmart, saya ingin memesan:\n\n";
+                    this.cart.forEach(i => { pesan += `- ${i.nama} [${i.varian.toUpperCase()}] (${i.qty}x) = ${this.formatRupiah(i.hargaTerpilih * i.qty)}\n`; });
+                    pesan += `\nTotal Akhir: ${this.formatRupiah(this.cartTotal)}`;
+                    window.open(`https://wa.me/6285397419715?text=${encodeURIComponent(pesan)}`);
+                },
+                saveProduct() {
+                    const fileInput = document.getElementById('admFile');
+                    const upload = (img) => {
+                        if (img) this.form.foto = img;
+                        if (this.editMode) { db.ref('produk/' + this.form.firebaseId).update(this.form); } 
+                        else { db.ref('produk').push(this.form); }
+                        this.adminModal = false; this.resetForm(); alert("Data sukses disimpan!");
+                    };
+                    if (fileInput && fileInput.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => upload(e.target.result);
+                        reader.readAsDataURL(fileInput.files[0]);
+                    } else { upload(this.form.foto); }
+                },
+                editProduct(p) {
+                    this.editMode = true;
+                    this.form = { 
+                        nama: p.nama || '', kategori: p.kategori || 'Sembako', stok: p.stok || 'Tersedia', detail: p.detail || '', foto: p.foto || '',
+                        listVarian: p.listVarian ? [...p.listVarian] : [{ namaVarian: 'pcs', harga: p.hargaPcs || p.harga || '' }], firebaseId: p.firebaseId
+                    };
+                    this.adminModal = true;
+                },
+                deleteProduct(fId) { if (confirm('Hapus produk ini?')) db.ref('produk/' + fId).remove(); },
+                closeAdminPanel() { this.adminModal = false; this.resetForm(); },
+                resetForm() { this.form = { nama: '', kategori: 'Sembako', stok: 'Tersedia', detail: '', foto: '', listVarian: [{namaVarian: 'pcs', harga: ''}] }; this.editMode = false; this.searchAdmin = ''; },
+                get filteredProducts() { 
+                    return this.products.filter(p => {
+                        const matchSearch = p.nama.toLowerCase().includes(this.search.toLowerCase());
+                        const matchCat = this.selectedCategory === 'Semua' || p.kategori === this.selectedCategory;
+                        return matchSearch && matchCat;
+                    }); 
+                },
+                get filteredAdminProducts() { return this.products.filter(p => p.nama.toLowerCase().includes(this.searchAdmin.toLowerCase())); },
+                filterCategory(cat) { this.selectedCategory = cat; this.page = 'produk'; },
+                openDetail(p) { this.activeProduct = p; const v = this.getActiveVarianList()[0]; this.currentVarianName = v.namaVarian; this.currentVarianHarga = v.harga; this.detailModal = true; },
+                formatRupiah(num) { return 'Rp ' + (num ? parseInt(num).toLocaleString('id-ID') : '0'); }
+            }
+        }
+    </script>
+
+    <script>
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const btnInstall = document.getElementById('btn-pwa-install');
+        const btnClose = document.getElementById('btn-pwa-close');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBanner && !sessionStorage.getItem('pwa-banner-closed')) {
+                installBanner.classList.remove('translate-y-20', 'opacity-0');
+                installBanner.classList.add('translate-y-0', 'opacity-100');
+            }
+        });
+
+        if (btnInstall) {
+            btnInstall.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted' && installBanner) {
+                        installBanner.classList.add('translate-y-20', 'opacity-0');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
+
+        if (btnClose && installBanner) {
+            btnClose.addEventListener('click', () => {
+                installBanner.className = "fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-green-600 text-white p-4 rounded-2xl shadow-2xl z-[9999] flex items-center justify-between transition-all duration-500 transform translate-y-20 opacity-0";
+                sessionStorage.setItem('pwa-banner-closed', 'true');
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</body>
+</html>
