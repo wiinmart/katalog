@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wiinmart-v801'; // Naik versi: manifest & ikon sudah disinkronkan
+const CACHE_NAME = 'wiinmart-v802'; // Banner instal sekarang otomatis muncul untuk semua pengunjung
 
 // File-file inti yang dibutuhkan agar aplikasi tetap bisa dibuka saat offline
 const assetsToCache = [
