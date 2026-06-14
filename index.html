@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katalog Toko wiinmart</title>
     
-    <link rel="manifest" href="manifest.json">
+    <link class="pwa-link" rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
     
-    <link rel="icon" type="image/jpeg" href="logo-192.jpg">
-    <link rel="apple-touch-icon" href="logo-192.jpg">
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
+    <link rel="apple-touch-icon" href="logo.jpg">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -60,7 +60,7 @@
 
     <div id="pwa-install-banner" class="fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-green-600 text-white p-4 rounded-2xl shadow-2xl z-[9999] flex items-center justify-between transition-all duration-500 transform translate-y-20 opacity-0">
         <div class="flex items-center gap-3">
-            <img src="logo-192.jpg" class="w-12 h-12 rounded-xl border border-white/20 shadow-sm">
+            <img src="logo.jpg" class="w-12 h-12 rounded-xl border border-white/20 shadow-sm object-cover">
             <div>
                 <p class="text-sm font-extrabold tracking-tight">Instal Aplikasi WiinMart</p>
                 <p class="text-[11px] opacity-90">Belanja lebih praktis & hemat kuota!</p>
@@ -459,71 +459,40 @@
         const btnInstall = document.getElementById('btn-pwa-install');
         const btnClose = document.getElementById('btn-pwa-close');
 
-        // Cek apakah aplikasi sudah dibuka dalam mode "terinstal" (standalone)
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-            || window.navigator.standalone === true;
-
-        // Deteksi iOS (Safari/Chrome di iPhone/iPad tidak support beforeinstallprompt)
-        const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-
-        function showInstallBanner() {
-            if (installBanner && !isStandalone && !localStorage.getItem('pwa-banner-closed')) {
+        // LANGSUNG MUNCULKAN BANNER (Tanpa nunggu kriteria browser selesai)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (installBanner && !sessionStorage.getItem('pwa-banner-closed')) {
                 installBanner.classList.remove('translate-y-20', 'opacity-0');
                 installBanner.classList.add('translate-y-0', 'opacity-100');
             }
-        }
-
-        function hideInstallBanner() {
-            if (installBanner) {
-                installBanner.classList.add('translate-y-20', 'opacity-0');
-                installBanner.classList.remove('translate-y-0', 'opacity-100');
-            }
-        }
-
-        // Tampilkan banner untuk SEMUA pengunjung (Android, Desktop, iPhone) setelah halaman siap,
-        // tidak menunggu event 'beforeinstallprompt' dari Chrome yang kadang butuh waktu/kunjungan berulang.
-        window.addEventListener('load', () => {
-            setTimeout(showInstallBanner, 1500);
         });
 
-        // Kalau Chrome mendeteksi PWA bisa diinstal langsung, tangkap event-nya untuk tombol "Instal"
+        // Simpan event pemicu asli dari browser jika sewaktu-waktu siap dieksekusi
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            showInstallBanner();
-        });
-
-        // Sembunyikan banner kalau ternyata sudah berhasil terinstal
-        window.addEventListener('appinstalled', () => {
-            hideInstallBanner();
-            localStorage.setItem('pwa-banner-closed', 'true');
         });
 
         if (btnInstall) {
             btnInstall.addEventListener('click', async () => {
                 if (deferredPrompt) {
-                    // Jalur normal: Chrome Android/Desktop sudah siap kasih prompt instal native
                     deferredPrompt.prompt();
                     const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        hideInstallBanner();
-                        localStorage.setItem('pwa-banner-closed', 'true');
+                    if (outcome === 'accepted' && installBanner) {
+                        installBanner.classList.add('translate-y-20', 'opacity-0');
                     }
                     deferredPrompt = null;
-                } else if (isIOS) {
-                    // iPhone: beforeinstallprompt tidak ada, kasih instruksi manual
-                    alert('Cara instal di iPhone:\n\n1. Tap ikon "Bagikan" (kotak dengan tanda panah ke atas) di bagian bawah Safari\n2. Pilih "Tambah ke Layar Utama"\n3. Tap "Tambah"');
                 } else {
-                    // Android/Desktop tapi prompt belum siap: kasih instruksi manual via menu browser
-                    alert('Cara instal:\n\n1. Tap menu titik tiga (⋮) di pojok kanan atas browser\n2. Pilih "Instal aplikasi" atau "Tambahkan ke Layar Utama"\n3. Tap "Instal"');
+                    // Fallback jika browser belum siap memicu prompt bawaan sistem
+                    alert("Silakan klik tombol menu (titik tiga) di pojok kanan atas browser Anda, lalu pilih 'Tambahkan ke Layar Utama' / 'Instal Aplikasi'.");
                 }
             });
         }
 
         if (btnClose && installBanner) {
             btnClose.addEventListener('click', () => {
-                hideInstallBanner();
-                localStorage.setItem('pwa-banner-closed', 'true');
+                installBanner.className = "fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-green-600 text-white p-4 rounded-2xl shadow-2xl z-[9999] flex items-center justify-between transition-all duration-500 transform translate-y-20 opacity-0";
+                sessionStorage.setItem('pwa-banner-closed', 'true');
             });
         }
 
