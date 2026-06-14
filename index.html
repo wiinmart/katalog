@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katalog Toko wiinmart</title>
     
-    <link class="pwa-link" rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
     
-    <link rel="icon" type="image/jpeg" href="logo.jpg">
-    <link rel="apple-touch-icon" href="logo.jpg">
+    <link rel="icon" type="image/jpeg" href="logo-192.jpg">
+    <link rel="apple-touch-icon" href="logo-192.jpg">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -60,7 +60,7 @@
 
     <div id="pwa-install-banner" class="fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-green-600 text-white p-4 rounded-2xl shadow-2xl z-[9999] flex items-center justify-between transition-all duration-500 transform translate-y-20 opacity-0">
         <div class="flex items-center gap-3">
-            <img src="logo.jpg" class="w-12 h-12 rounded-xl border border-white/20 shadow-sm object-cover">
+            <img src="logo-192.jpg" class="w-12 h-12 rounded-xl border border-white/20 shadow-sm">
             <div>
                 <p class="text-sm font-extrabold tracking-tight">Instal Aplikasi WiinMart</p>
                 <p class="text-[11px] opacity-90">Belanja lebih praktis & hemat kuota!</p>
@@ -459,18 +459,13 @@
         const btnInstall = document.getElementById('btn-pwa-install');
         const btnClose = document.getElementById('btn-pwa-close');
 
-        // LANGSUNG MUNCULKAN BANNER (Tanpa nunggu kriteria browser selesai)
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
             if (installBanner && !sessionStorage.getItem('pwa-banner-closed')) {
                 installBanner.classList.remove('translate-y-20', 'opacity-0');
                 installBanner.classList.add('translate-y-0', 'opacity-100');
             }
-        });
-
-        // Simpan event pemicu asli dari browser jika sewaktu-waktu siap dieksekusi
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
         });
 
         if (btnInstall) {
@@ -482,9 +477,6 @@
                         installBanner.classList.add('translate-y-20', 'opacity-0');
                     }
                     deferredPrompt = null;
-                } else {
-                    // Fallback jika browser belum siap memicu prompt bawaan sistem
-                    alert("Silakan klik tombol menu (titik tiga) di pojok kanan atas browser Anda, lalu pilih 'Tambahkan ke Layar Utama' / 'Instal Aplikasi'.");
                 }
             });
         }
