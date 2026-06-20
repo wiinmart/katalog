@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wiinmart-v803'; // Banner instal sekarang otomatis muncul untuk semua pengunjung
+const CACHE_NAME = 'wiinmart-v1000'; // Banner instal sekarang otomatis muncul untuk semua pengunjung
 
 // File-file inti yang dibutuhkan agar aplikasi tetap bisa dibuka saat offline
 const assetsToCache = [
