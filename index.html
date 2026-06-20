@@ -417,9 +417,34 @@
                     const fileInput = document.getElementById('admFile');
                     const upload = (img) => {
                         if (img) this.form.foto = img;
-                        if (this.editMode) { db.ref('produk/' + this.form.firebaseId).update(this.form); } 
-                        else { db.ref('produk').push(this.form); }
-                        this.adminModal = false; this.resetForm(); alert("Data sukses disimpan!");
+                        
+                        // BERSIHKAN PROXY ALPINE SEBELUM DIKIRIM KE FIREBASE
+                        const dataToSave = {
+                            nama: this.form.nama || '',
+                            kategori: this.form.kategori || 'Sembako',
+                            stok: this.form.stok || 'Tersedia',
+                            detail: this.form.detail || '',
+                            foto: this.form.foto || '',
+                            listVarian: JSON.parse(JSON.stringify(this.form.listVarian))
+                        };
+
+                        if (this.editMode) { 
+                            db.ref('produk/' + this.form.firebaseId).update(dataToSave)
+                                .then(() => {
+                                    this.adminModal = false; 
+                                    this.resetForm(); 
+                                    alert("Data sukses diperbarui!");
+                                })
+                                .catch(err => {
+                                    console.error("Gagal update:", err);
+                                    alert("Gagal memperbarui data!");
+                                });
+                        } else { 
+                            db.ref('produk').push(dataToSave); 
+                            this.adminModal = false; 
+                            this.resetForm(); 
+                            alert("Data sukses disimpan!");
+                        }
                     };
                     if (fileInput && fileInput.files[0]) {
                         const reader = new FileReader();
@@ -431,7 +456,8 @@
                     this.editMode = true;
                     this.form = { 
                         nama: p.nama || '', kategori: p.kategori || 'Sembako', stok: p.stok || 'Tersedia', detail: p.detail || '', foto: p.foto || '',
-                        listVarian: p.listVarian ? [...p.listVarian] : [{ namaVarian: 'pcs', harga: p.hargaPcs || p.harga || '' }], firebaseId: p.firebaseId
+                        // PUTUS HUBUNGAN LIVE REFERENSI DENGAN DEEP CLONE AGAR BISA DIEDIT MANDIRI
+                        listVarian: p.listVarian ? JSON.parse(JSON.stringify(p.listVarian)) : [{ namaVarian: 'pcs', harga: p.hargaPcs || p.harga || '' }], firebaseId: p.firebaseId
                     };
                     this.adminModal = true;
                 },
