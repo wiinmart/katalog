@@ -291,7 +291,7 @@
             </div>
             
             <div class="table-responsive bg-white rounded-xl border">
-                <table class="w-full text-sm">
+                <table class="w-full min-w-[560px] text-sm">
                     <thead>
                         <tr class="bg-gray-100 border-b text-gray-600 uppercase text-[10px]">
                             <th class="p-3 text-left">Nama</th>
@@ -302,11 +302,11 @@
                     <tbody class="divide-y">
                         <template x-for="p in filteredAdminProducts" :key="p.firebaseId">
                             <tr class="hover:bg-gray-50 transition">
-                                <td class="p-3 font-semibold text-gray-700 text-xs md:text-sm" x-text="p.nama"></td>
+                                <td class="p-3 font-semibold text-gray-700 text-xs md:text-sm whitespace-nowrap" x-text="p.nama"></td>
                                 <td class="p-3 text-xs">
                                     <div class="flex flex-wrap gap-1.5">
                                         <template x-for="v in (p.listVarian || [{namaVarian: 'pcs', harga: p.hargaPcs || p.harga || ''}])">
-                                            <span class="bg-gray-100 border text-gray-600 px-2 py-0.5 rounded font-medium">
+                                            <span class="bg-gray-100 border text-gray-600 px-2 py-0.5 rounded font-medium whitespace-nowrap">
                                                 <span class="uppercase font-bold text-green-600" x-text="v.namaVarian"></span>: <span class="text-orange-600 font-bold" x-text="formatRupiah(v.harga)"></span>
                                             </span>
                                         </template>
